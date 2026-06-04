@@ -29,6 +29,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <Link href="/wedstrijden" className="hover:underline">
                     Wedstrijden
                   </Link>
+                  <Link href="/poules" className="hover:underline">
+                    Poules
+                  </Link>
                   <Link href="/bonus" className="hover:underline">
                     Bonusvragen
                   </Link>
