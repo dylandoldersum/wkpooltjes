@@ -82,6 +82,10 @@ export default async function BracketPage() {
         <p className="mb-3 text-xs text-slate-500">
           Per poule: kies de poulewinnaar (<strong>3 pt</strong>) en nummer 2 (<strong>2 pt</strong>).
           Daarna: de 8 beste 3e plaatsen die ook doorgaan (<strong>2 pt</strong> per juist team).
+          {" "}
+          <span className="font-medium text-oranje-700">
+            Bonus: +5 pt als je per poule zowel winnaar als nummer 2 correct hebt.
+          </span>
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

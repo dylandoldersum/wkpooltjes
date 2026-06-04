@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { db, schema } from "@/db/client";
 import { sql } from "drizzle-orm";
+import { getPrizesText, parsePrizes } from "@/lib/prizes";
 
 export default async function HomePage() {
   const user = await getCurrentUser();
@@ -14,6 +15,8 @@ export default async function HomePage() {
   const [{ count: userCount }] = await db
     .select({ count: sql<number>`count(*)` })
     .from(schema.users);
+
+  const prizes = parsePrizes(await getPrizesText());
 
   return (
     <div className="space-y-8">
@@ -78,6 +81,23 @@ export default async function HomePage() {
           </p>
         </div>
       </section>
+
+      {prizes.length > 0 && (
+        <section className="rounded-xl bg-gradient-to-br from-oranje-50 via-white to-oranje-50 p-6 shadow-sm ring-1 ring-oranje-100">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-2xl">🏆</span>
+            <h2 className="text-xl font-bold">Te winnen</h2>
+          </div>
+          <ul className="space-y-2">
+            {prizes.map((p, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm">
+                <span className="text-lg leading-6">{p.emoji}</span>
+                <span className="text-slate-700">{p.description}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

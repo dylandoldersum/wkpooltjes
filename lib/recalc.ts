@@ -1,6 +1,9 @@
 import { db, schema } from "@/db/client";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { scoreForPrediction } from "./scoring";
+
+// Bonus wanneer zowel winnaar als nummer 2 van een poule correct voorspeld.
+export const GROUP_BONUS_POINTS = 5;
 
 /**
  * Recalculate points for all predictions on a single match.
@@ -142,6 +145,12 @@ export async function recalcBracketSlot(slotId: number) {
           );
       }
     }
+    // Trigger group-bonus recalc voor deze poule
+    // slotKey format: gw-A, gr-A → groupCode = A
+    const groupCode = slot.slotKey.split("-")[1];
+    if (groupCode) {
+      await recalcGroupBonusForGroup(groupCode);
+    }
     return;
   }
 
@@ -194,5 +203,93 @@ export async function recalcAllForStage(stage: string) {
     .where(eq(schema.bracketSlots.stage, stage));
   for (const s of slots) {
     await recalcBracketSlot(s.id);
+  }
+}
+
+/**
+ * Recalculate group bonus voor één specifieke poule.
+ * Een gebruiker krijgt GROUP_BONUS_POINTS als hun voorspelling voor gw-X EN gr-X beiden correct zijn.
+ */
+export async function recalcGroupBonusForGroup(groupCode: string) {
+  const [winnerSlot] = await db
+    .select()
+    .from(schema.bracketSlots)
+    .where(eq(schema.bracketSlots.slotKey, `gw-${groupCode}`));
+  const [runnerSlot] = await db
+    .select()
+    .from(schema.bracketSlots)
+    .where(eq(schema.bracketSlots.slotKey, `gr-${groupCode}`));
+  if (!winnerSlot || !runnerSlot) return;
+
+  // Haal alle picks voor beide slots op
+  const allPicks = await db
+    .select()
+    .from(schema.bracketPredictions)
+    .where(
+      inArray(schema.bracketPredictions.slotId, [winnerSlot.id, runnerSlot.id]),
+    );
+
+  // Index per user
+  const byUser = new Map<number, { winner?: number; runner?: number }>();
+  for (const p of allPicks) {
+    if (!byUser.has(p.userId)) byUser.set(p.userId, {});
+    const entry = byUser.get(p.userId)!;
+    if (p.slotId === winnerSlot.id) entry.winner = p.teamId;
+    if (p.slotId === runnerSlot.id) entry.runner = p.teamId;
+  }
+
+  const winnerActual = winnerSlot.actualTeamId;
+  const runnerActual = runnerSlot.actualTeamId;
+
+  // Bestaande bonus-rijen voor deze poule ophalen
+  const existing = await db
+    .select()
+    .from(schema.groupBonuses)
+    .where(eq(schema.groupBonuses.groupCode, groupCode));
+  const existingByUser = new Map(existing.map((b) => [b.userId, b]));
+
+  for (const [userId, picks] of byUser) {
+    const bothCorrect =
+      winnerActual !== null &&
+      runnerActual !== null &&
+      picks.winner === winnerActual &&
+      picks.runner === runnerActual;
+    const pts = bothCorrect ? GROUP_BONUS_POINTS : 0;
+
+    const existingRow = existingByUser.get(userId);
+    if (existingRow) {
+      if (existingRow.pointsAwarded !== pts) {
+        await db
+          .update(schema.groupBonuses)
+          .set({ pointsAwarded: pts, updatedAt: new Date() })
+          .where(
+            and(
+              eq(schema.groupBonuses.userId, userId),
+              eq(schema.groupBonuses.groupCode, groupCode),
+            ),
+          );
+      }
+    } else if (pts > 0) {
+      await db.insert(schema.groupBonuses).values({
+        userId,
+        groupCode,
+        pointsAwarded: pts,
+      });
+    }
+  }
+
+  // Edge case: bestaande bonus-rijen waarvan de user nu geen picks meer heeft → op 0 zetten
+  for (const [userId, bonus] of existingByUser) {
+    if (!byUser.has(userId) && bonus.pointsAwarded !== 0) {
+      await db
+        .update(schema.groupBonuses)
+        .set({ pointsAwarded: 0 })
+        .where(
+          and(
+            eq(schema.groupBonuses.userId, userId),
+            eq(schema.groupBonuses.groupCode, groupCode),
+          ),
+        );
+    }
   }
 }

@@ -108,6 +108,20 @@ export const bracketPredictions = sqliteTable(
   }),
 );
 
+// Bonus per groep: gehaald als zowel winnaar als nummer 2 correct voorspeld.
+export const groupBonuses = sqliteTable(
+  "group_bonuses",
+  {
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    groupCode: text("group_code").notNull(), // A..L
+    pointsAwarded: integer("points_awarded").notNull().default(0),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.groupCode] }),
+  }),
+);
+
 // Key-value settings (e.g. tournament_locked_at, scoring config)
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),

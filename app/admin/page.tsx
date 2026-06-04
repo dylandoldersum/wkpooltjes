@@ -85,6 +85,11 @@ export default async function AdminHome() {
           <div className="mt-1 font-semibold">Gebruikers</div>
           <div className="text-xs text-slate-500">Verwijderen, admin rechten geven.</div>
         </Link>
+        <Link href="/admin/prizes" className="rounded-xl bg-white p-5 shadow-sm hover:bg-oranje-50">
+          <div className="text-2xl">🏆</div>
+          <div className="mt-1 font-semibold">Prijzen</div>
+          <div className="text-xs text-slate-500">Wat is er te winnen — zichtbaar op homepage.</div>
+        </Link>
       </div>
 
       {showSecretButton && (

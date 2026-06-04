@@ -9,6 +9,7 @@ type Row = {
   matchPoints: number;
   bonusPoints: number;
   bracketPoints: number;
+  groupBonusPoints: number;
   total: number;
   exactScores: number;
 };
@@ -43,11 +44,20 @@ export default async function RanglijstPage() {
     .from(schema.bracketPredictions)
     .groupBy(schema.bracketPredictions.userId);
 
+  const groupBonusPts = await db
+    .select({
+      userId: schema.groupBonuses.userId,
+      pts: sql<number>`sum(${schema.groupBonuses.pointsAwarded})`,
+    })
+    .from(schema.groupBonuses)
+    .groupBy(schema.groupBonuses.userId);
+
   const users = await db.select().from(schema.users);
 
   const matchMap = new Map(matchPts.map((r) => [r.userId, r]));
   const bonusMap = new Map(bonusPts.map((r) => [r.userId, r.pts]));
   const bracketMap = new Map(bracketPts.map((r) => [r.userId, r.pts]));
+  const groupBonusMap = new Map(groupBonusPts.map((r) => [r.userId, r.pts]));
 
   const rows: Row[] = users.map((u) => {
     const m = matchMap.get(u.id);
@@ -55,13 +65,15 @@ export default async function RanglijstPage() {
     const exact = Number(m?.exact ?? 0);
     const bp = Number(bonusMap.get(u.id) ?? 0);
     const brp = Number(bracketMap.get(u.id) ?? 0);
+    const gbp = Number(groupBonusMap.get(u.id) ?? 0);
     return {
       userId: u.id,
       name: u.name,
       matchPoints,
       bonusPoints: bp,
       bracketPoints: brp,
-      total: matchPoints + bp + brp,
+      groupBonusPoints: gbp,
+      total: matchPoints + bp + brp + gbp,
       exactScores: exact,
     };
   });
@@ -86,13 +98,14 @@ export default async function RanglijstPage() {
               <th className="px-4 py-2 text-right">Wedstrijden</th>
               <th className="px-4 py-2 text-right">Bonus</th>
               <th className="px-4 py-2 text-right">Bracket</th>
+              <th className="px-4 py-2 text-right" title="Bonus voor poule waarvan beide winnaar + nr. 2 goed">Poule</th>
               <th className="px-4 py-2 text-right">Totaal</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
                   Nog geen deelnemers met punten.
                 </td>
               </tr>
@@ -111,6 +124,9 @@ export default async function RanglijstPage() {
                   <td className="px-4 py-2 text-right">{r.matchPoints}</td>
                   <td className="px-4 py-2 text-right">{r.bonusPoints}</td>
                   <td className="px-4 py-2 text-right">{r.bracketPoints}</td>
+                  <td className="px-4 py-2 text-right text-oranje-700">
+                    {r.groupBonusPoints > 0 ? `+${r.groupBonusPoints}` : "—"}
+                  </td>
                   <td className="px-4 py-2 text-right font-bold">{r.total}</td>
                 </tr>
               );
