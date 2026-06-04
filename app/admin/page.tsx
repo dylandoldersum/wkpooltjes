@@ -64,7 +64,7 @@ export default async function AdminHome() {
         )}
       </section>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <Link href="/admin/wedstrijden" className="rounded-xl bg-white p-5 shadow-sm hover:bg-oranje-50">
           <div className="text-2xl">⚽</div>
           <div className="mt-1 font-semibold">Uitslagen handmatig</div>
@@ -79,6 +79,11 @@ export default async function AdminHome() {
           <div className="text-2xl">🥇</div>
           <div className="mt-1 font-semibold">Bracket-resultaten</div>
           <div className="text-xs text-slate-500">Welke teams in welke ronde gehaald.</div>
+        </Link>
+        <Link href="/admin/users" className="rounded-xl bg-white p-5 shadow-sm hover:bg-oranje-50">
+          <div className="text-2xl">👥</div>
+          <div className="mt-1 font-semibold">Gebruikers</div>
+          <div className="text-xs text-slate-500">Verwijderen, admin rechten geven.</div>
         </Link>
       </div>
 
