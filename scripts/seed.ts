@@ -160,9 +160,31 @@ const BONUS_QUESTIONS = [
   { question: "Tot welke ronde komt Oranje?", type: "text" as const, points: 10, locksAtIso: "2026-06-14T22:00:00+02:00" },
 ];
 
-// Bracket slots — 16 R16 winners → 8 QF → 4 SF → 2 Final → 1 Winner.
-// (WK 2026 uses Round of 32 first; we model R16 onwards which is when knockout structure becomes truly bracket-shaped.)
+// Bracket slots — WK 2026 format: 12 groepen → top 2 + 8 beste 3e = 32 teams in R32 → 16 → 8 → 4 → 2.
+const GROUPS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+
 const BRACKET_SLOTS = [
+  // 12 poulewinnaars (slot-specifiek: gw-A == Brazilië scoort alleen als Brazilië echt poule A wint)
+  ...GROUPS.map((g) => ({
+    slotKey: `gw-${g}`,
+    stage: "group-winner" as const,
+    label: `Winnaar poule ${g}`,
+    points: 3,
+  })),
+  // 12 nummer 2's per poule
+  ...GROUPS.map((g) => ({
+    slotKey: `gr-${g}`,
+    stage: "group-runner-up" as const,
+    label: `Tweede poule ${g}`,
+    points: 2,
+  })),
+  // 8 beste 3e plaatsen (interchangeable — pick any 8 teams)
+  ...Array.from({ length: 8 }, (_, i) => ({
+    slotKey: `bt-${i + 1}`,
+    stage: "best-third" as const,
+    label: `Beste 3e #${i + 1}`,
+    points: 2,
+  })),
   // Round of 16 (top 16 winners of R32 — predict which 16 teams reach the R16)
   ...Array.from({ length: 16 }, (_, i) => ({
     slotKey: `r16-${i + 1}`,

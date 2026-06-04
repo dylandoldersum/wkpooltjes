@@ -301,20 +301,28 @@ export async function predictBracketForUser(userId: number): Promise<{
     .map((s) => `- slotId ${s.id} | ronde=${s.stage} | "${s.label}"`)
     .join("\n");
 
-  const prompt = `Voorspel welke teams welke knockout-rondes halen op het WK 2026.
+  const prompt = `Voorspel welke teams welke posities/rondes halen op het WK 2026.
 
 Beschikbare teams (formaat "id: naam (poule)"):
 ${teamList}
 
-Slots om te vullen (elk slot = één team dat die ronde haalt):
+Slots om te vullen (elk slot = één team):
 ${slotList}
 
-Regels:
-- "r16" = laatste 16, "qf" = laatste 8, "sf" = laatste 4, "final" = finalisten.
-- Een team kan in r16 staan en later ook in qf/sf/final (als ze verder komen).
-- 16 r16-slots → 8 qf-slots → 4 sf-slots → 2 final-slots.
-- Maak realistische keuzes op basis van groepskracht: top-tier teams (Frankrijk, Spanje, Brazilië, Argentinië, Engeland, Duitsland, Portugal, Nederland) moeten ver komen; outsiders kunnen de r16 halen maar zelden de halve finale.
-- Geef per slot het team ID terug.`;
+Stages uitgelegd:
+- "group-winner" — voorspel poulewinnaar per poule (slot "Winnaar poule A" = team dat poule A wint, etc.).
+  KRITIEK: kies een team UIT die specifieke poule. "Winnaar poule A" mag alleen een team uit poule A zijn.
+- "group-runner-up" — nummer 2 per poule. Idem: kies team UIT die poule, niet 1e geplaatste.
+- "best-third" — 8 beste 3e plaatsen die doorgaan (kies 8 verschillende teams die je verwacht als 3e te eindigen in hun poule).
+- "r16" = laatste 16, "qf" = kwartfinale, "sf" = halve finale, "final" = finalisten.
+- Een team mag in meerdere stages staan (als ze van r16 naar qf doorgaan etc.).
+
+Realisme:
+- Top-tier (Frankrijk, Spanje, Brazilië, Argentinië, Engeland, Duitsland, Portugal, Nederland) → poulewinnaar én ver in de knockout.
+- Outsiders → kunnen 2e of 3e worden, soms r16 maar zelden verder.
+- Voor 3e plaatsen: kies uit verschillende poules om verspreiding te krijgen.
+
+Geef per slot het team ID terug.`;
 
   const responseSchema = {
     type: Type.OBJECT,

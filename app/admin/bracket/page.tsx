@@ -5,6 +5,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { AdminBracketRow } from "./AdminBracketRow";
 
 const STAGE_LABELS: Record<string, string> = {
+  "group-winner": "Poulewinnaars (1e plaatsen)",
+  "group-runner-up": "Nummer 2's per poule",
+  "best-third": "Beste 3e plaatsen",
   r16: "Achtste finales",
   qf: "Kwartfinales",
   sf: "Halve finales",
@@ -33,7 +36,7 @@ export default async function AdminBracket() {
         </p>
       </div>
 
-      {["r16", "qf", "sf", "final"].map((stage) => {
+      {["group-winner", "group-runner-up", "best-third", "r16", "qf", "sf", "final"].map((stage) => {
         const stageSlots = byStage.get(stage) ?? [];
         if (stageSlots.length === 0) return null;
         return (

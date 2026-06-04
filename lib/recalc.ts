@@ -95,6 +95,9 @@ export async function recalcBonusQuestion(questionId: number) {
   }
 }
 
+// Stages where slot positie ertoe doet (winnaar poule C ≠ winnaar poule G)
+const EXACT_SLOT_STAGES = new Set(["group-winner", "group-runner-up"]);
+
 /**
  * Recalculate points for a bracket slot.
  */
@@ -123,13 +126,28 @@ export async function recalcBracketSlot(slotId: number) {
     return;
   }
 
-  // A user gets points for this slot if any of their picks (in this stage or earlier)
-  // names the actual team. Simpler rule: exact match between pick.teamId and slot.actualTeamId
-  // would be too strict because slot positions are unordered.
-  // So: for each user, if ANY of their picks for this stage equals actualTeamId, award once.
-  // Implement per-slot match: pick.teamId === actualTeamId.
-  // (Users who pick the same team multiple times in a stage get the points once.)
-  // We pre-compute per user whether they have any matching pick in this stage.
+  // Voor slot-specifieke stages (poulewinnaar/runner-up): exacte match per slot.
+  if (EXACT_SLOT_STAGES.has(slot.stage)) {
+    for (const p of picks) {
+      const pts = p.teamId === slot.actualTeamId ? slot.points : 0;
+      if (pts !== p.pointsAwarded) {
+        await db
+          .update(schema.bracketPredictions)
+          .set({ pointsAwarded: pts })
+          .where(
+            and(
+              eq(schema.bracketPredictions.userId, p.userId),
+              eq(schema.bracketPredictions.slotId, slotId),
+            ),
+          );
+      }
+    }
+    return;
+  }
+
+  // Voor interchangeable stages (r16, qf, sf, final, best-third): "any match in stage" logic.
+  // Een user krijgt punten als één van hun picks in deze stage de actual team noemt.
+  // Dezelfde team meerdere keren pickken levert max één keer punten op (op de slot met laagste ID).
   const picksInStage = await db
     .select({
       userId: schema.bracketPredictions.userId,
@@ -143,7 +161,6 @@ export async function recalcBracketSlot(slotId: number) {
     )
     .where(eq(schema.bracketSlots.stage, slot.stage));
 
-  // For each user, find their earliest slotId in this stage where teamId matches actual
   const claimedByUser = new Map<number, number>(); // userId -> slotId that gets the points
   for (const p of picksInStage) {
     if (p.teamId !== slot.actualTeamId) continue;
