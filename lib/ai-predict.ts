@@ -3,12 +3,35 @@ import { z } from "zod";
 import { db, schema } from "@/db/client";
 import { eq, gt } from "drizzle-orm";
 
-const MODEL = "gemini-2.5-flash";
+// Volgorde van fallback-models. Bij overload op de eerste, probeer de volgende.
+const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
 
 function getClient(): GoogleGenAI {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY ontbreekt in env");
   return new GoogleGenAI({ apiKey });
+}
+
+function isRetryableError(e: unknown): boolean {
+  if (!(e instanceof Error)) return false;
+  const msg = e.message.toLowerCase();
+  return (
+    msg.includes("503") ||
+    msg.includes("unavailable") ||
+    msg.includes("overloaded") ||
+    msg.includes("high demand") ||
+    msg.includes("429") ||
+    msg.includes("rate limit") ||
+    msg.includes("resource_exhausted") ||
+    msg.includes("internal") ||
+    msg.includes("500") ||
+    msg.includes("502") ||
+    msg.includes("504")
+  );
+}
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 async function callGeminiJson<T>(
@@ -17,19 +40,47 @@ async function callGeminiJson<T>(
   zodSchema: z.ZodType<T>,
 ): Promise<T> {
   const ai = getClient();
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema,
-      temperature: 0.4,
-    },
-  });
-  const text = response.text;
-  if (!text) throw new Error("Gemini gaf geen tekst-respons");
-  const json = JSON.parse(text);
-  return zodSchema.parse(json);
+  let lastError: unknown = null;
+
+  // Loop door modellen. Per model: 3 retries met exponential backoff.
+  for (let modelIdx = 0; modelIdx < MODELS.length; modelIdx++) {
+    const model = MODELS[modelIdx];
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema,
+            temperature: 0.4,
+          },
+        });
+        const text = response.text;
+        if (!text) throw new Error("Gemini gaf geen tekst-respons");
+        const json = JSON.parse(text);
+        return zodSchema.parse(json);
+      } catch (e) {
+        lastError = e;
+        if (!isRetryableError(e)) throw e;
+        // Wacht 1s, 2s, 4s tussen pogingen
+        const delay = Math.pow(2, attempt) * 1000;
+        console.warn(
+          `[ai-predict] ${model} attempt ${attempt + 1} failed (${
+            e instanceof Error ? e.message.slice(0, 80) : "unknown"
+          }), retrying in ${delay}ms`,
+        );
+        await sleep(delay);
+      }
+    }
+    console.warn(`[ai-predict] ${model} exhausted, trying next model`);
+  }
+
+  throw lastError instanceof Error
+    ? new Error(
+        `Alle Gemini-modellen overbelast. Probeer over een paar minuten opnieuw. (laatste: ${lastError.message})`,
+      )
+    : new Error("Alle Gemini-modellen faalden");
 }
 
 /* --------------------------- Match predictions --------------------------- */
