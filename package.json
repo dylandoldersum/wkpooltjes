@@ -8,8 +8,10 @@
     "start": "next start",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx scripts/seed.ts",
-    "db:create-admin": "tsx scripts/create-admin.ts"
+    "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "db:create-admin": "tsx --env-file=.env.local scripts/create-admin.ts",
+    "db:check-user": "tsx --env-file=.env.local scripts/check-user.ts",
+    "db:check-password": "tsx --env-file=.env.local scripts/check-password.ts"
   },
   "dependencies": {
     "@google/genai": "^2.6.0",

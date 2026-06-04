@@ -1,7 +1,4 @@
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
-
+// Env vars worden geladen via `node --env-file=.env.local` (zie package.json scripts)
 import { db, schema } from "../db/client";
 import { eq } from "drizzle-orm";
 
