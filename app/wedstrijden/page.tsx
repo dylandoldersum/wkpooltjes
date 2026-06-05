@@ -10,10 +10,19 @@ export default async function WedstrijdenPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const matchesRaw = await db
+  const allMatches = await db
     .select()
     .from(schema.matches)
     .orderBy(asc(schema.matches.kickoff));
+
+  // Filter wedstrijden zonder team-info (knockout-matches waar nog niet duidelijk
+  // is wie er speelt — kun je geen score op voorspellen)
+  const matchesRaw = allMatches.filter(
+    (m) =>
+      (m.homeTeamId !== null || m.homeLabel) &&
+      (m.awayTeamId !== null || m.awayLabel),
+  );
+  const hiddenTbdCount = allMatches.length - matchesRaw.length;
 
   const teamMap = new Map(
     (await db.select().from(schema.teams)).map((t) => [t.id, t]),
@@ -43,6 +52,12 @@ export default async function WedstrijdenPage() {
           Voorspel de eindstand. Punten: <strong>5</strong> voor exacte score,{" "}
           <strong>2</strong> voor juiste toto (1-X-2). Wedstrijden sluiten bij aftrap.
         </p>
+        {hiddenTbdCount > 0 && (
+          <p className="mt-2 text-xs text-slate-500">
+            ℹ️ {hiddenTbdCount} knockout-wedstrijd{hiddenTbdCount === 1 ? "" : "en"} verborgen —
+            teams nog niet bekend. Verschijnen zodra de poulefase voorbij is.
+          </p>
+        )}
       </div>
 
       {[...byDate.entries()].map(([key, dayMatches]) => {
