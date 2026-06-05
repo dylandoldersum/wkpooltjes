@@ -19,7 +19,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <TopProgressBar />
         </Suspense>
         <header className="bg-gradient-to-r from-oranje-600 to-oranje-500 text-white shadow">
-          <nav className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+          <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
             <Link href="/" className="text-lg font-bold tracking-tight">
               🏆 WK Pooltjes 2026
             </Link>
@@ -68,8 +68,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </nav>
         </header>
-        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
-        <footer className="mx-auto max-w-5xl px-4 pb-8 pt-4 text-center text-xs text-slate-500">
+        <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+        <footer className="mx-auto max-w-7xl px-4 pb-8 pt-4 text-center text-xs text-slate-500">
           WK 2026 · Canada · Mexico · VS · {new Date().getFullYear()}
         </footer>
       </body>

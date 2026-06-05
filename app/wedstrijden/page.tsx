@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { formatDateLong, formatTime, dateKey } from "@/lib/format";
 import { totoLabel } from "@/lib/scoring";
 import { PredictionForm } from "./PredictionForm";
+import { computePredictedStandings } from "@/lib/predicted-standings";
+import { StandingsSidebar } from "./StandingsSidebar";
 
 export default async function WedstrijdenPage() {
   const user = await getCurrentUser();
@@ -44,8 +46,28 @@ export default async function WedstrijdenPage() {
     byDate.get(key)!.push(m);
   }
 
+  // Voorspelde poulestanden berekenen
+  const predictedStandings = await computePredictedStandings(user.id);
+  const teamByIdPlain = new Map(
+    [...teamMap.entries()].map(([id, t]) => [
+      id,
+      { id: t.id, name: t.name, flag: t.flag },
+    ]),
+  );
+
+  // Per poule: hoeveel wedstrijden totaal en hoeveel voorspeld
+  const matchesPerGroup = new Map<string, { total: number; predicted: number }>();
+  for (const m of allMatches) {
+    if (m.stage !== "group" || !m.groupCode) continue;
+    const entry = matchesPerGroup.get(m.groupCode) ?? { total: 0, predicted: 0 };
+    entry.total++;
+    if (predMap.has(m.id)) entry.predicted++;
+    matchesPerGroup.set(m.groupCode, entry);
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 lg:grid-cols-12">
+      <div className="space-y-6 lg:col-span-8">
       <div>
         <h1 className="text-2xl font-bold">Wedstrijden</h1>
         <p className="text-sm text-slate-600">
@@ -124,6 +146,17 @@ export default async function WedstrijdenPage() {
           </section>
         );
       })}
+      </div>
+
+      <aside className="lg:col-span-4">
+        <div className="lg:sticky lg:top-4">
+          <StandingsSidebar
+            standings={predictedStandings}
+            teamById={teamByIdPlain}
+            matchesPerGroup={matchesPerGroup}
+          />
+        </div>
+      </aside>
     </div>
   );
 }

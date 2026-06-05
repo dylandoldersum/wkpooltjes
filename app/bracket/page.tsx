@@ -3,6 +3,7 @@ import { db, schema } from "@/db/client";
 import { asc, eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { BracketForm } from "./BracketForm";
+import { SuggestionButton } from "./SuggestionButton";
 
 const STAGE_LABELS: Record<string, string> = {
   r16: "Achtste finales (top 16)",
@@ -87,6 +88,12 @@ export default async function BracketPage() {
             Bonus: +5 pt als je per poule zowel winnaar als nummer 2 correct hebt.
           </span>
         </p>
+
+        {!locked && (
+          <div className="mb-4">
+            <SuggestionButton />
+          </div>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {GROUPS.map((g) => {
