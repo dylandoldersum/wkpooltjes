@@ -34,10 +34,14 @@ export function SyncButton() {
       {result && (
         <div className="rounded bg-green-50 px-3 py-2 text-sm text-green-800">
           <div>
-            <strong>{result.updated}</strong> wedstrijd(en) bijgewerkt. {result.alreadyUpToDate}{" "}
+            <strong>{result.updated}</strong> wedstrijd(en) score bijgewerkt. {result.alreadyUpToDate}{" "}
             al up-to-date. {result.unmatched} niet gekoppeld.
           </div>
-          <div className="text-xs">
+          <div className="mt-1">
+            <strong>{result.knockoutMatchesAdded}</strong> nieuwe knockout-match(es) toegevoegd ·{" "}
+            <strong>{result.bracketActualsSet}</strong> bracket slot(s) auto-ingevuld
+          </div>
+          <div className="mt-1 text-xs">
             ({result.finishedFromApi} afgeronde wedstrijden in API van {result.totalFromApi} totaal)
           </div>
           {result.unmatched > 0 && (
