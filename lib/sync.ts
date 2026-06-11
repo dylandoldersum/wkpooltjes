@@ -13,6 +13,7 @@ export type SyncResult = {
   unmatchedSamples: Array<{ home: string | null; away: string | null; utcDate: string }>;
   bracketActualsSet: number;
   knockoutMatchesAdded: number;
+  kickoffTimesUpdated: number;
 };
 
 const MATCH_WINDOW_MS = 48 * 60 * 60 * 1000;
@@ -54,7 +55,36 @@ export async function syncResultsFromApi(apiKey: string): Promise<SyncResult> {
     unmatchedSamples: [],
     bracketActualsSet: 0,
     knockoutMatchesAdded: 0,
+    kickoffTimesUpdated: 0,
   };
+
+  // ============ Pass 1: kickoff-tijden syncen voor ALLE matches ============
+  // Onafhankelijk van of de wedstrijd al gespeeld is. Match op team-paar (uniek per
+  // toernooi binnen onze DB). Ignore tijdvenster — placeholder-tijden kunnen ver afzitten.
+  for (const fdm of fdMatches) {
+    const homeCode = normalizeTla(fdm.homeTeam.tla);
+    const awayCode = normalizeTla(fdm.awayTeam.tla);
+    if (!homeCode || !awayCode) continue;
+    const home = teamByCode.get(homeCode);
+    const away = teamByCode.get(awayCode);
+    if (!home || !away) continue;
+
+    const candidates = ourMatches.filter(
+      (m) => m.homeTeamId === home.id && m.awayTeamId === away.id,
+    );
+    if (candidates.length !== 1) continue;
+    const match = candidates[0];
+
+    const newKickoff = new Date(fdm.utcDate);
+    if (match.kickoff.getTime() !== newKickoff.getTime()) {
+      await db
+        .update(schema.matches)
+        .set({ kickoff: newKickoff })
+        .where(eq(schema.matches.id, match.id));
+      match.kickoff = newKickoff; // in-memory voor Pass 2
+      result.kickoffTimesUpdated++;
+    }
+  }
 
   for (const fdm of fdMatches) {
     if (fdm.status !== "FINISHED") continue;
