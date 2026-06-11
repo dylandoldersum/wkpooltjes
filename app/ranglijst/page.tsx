@@ -94,19 +94,22 @@ export default async function RanglijstPage() {
         <table className="w-full text-sm">
           <thead className="border-b border-slate-100 bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-2">#</th>
-              <th className="px-4 py-2">Naam</th>
-              <th className="px-4 py-2 text-right">Wedstrijden</th>
-              <th className="px-4 py-2 text-right">Bonus</th>
-              <th className="px-4 py-2 text-right">Bracket</th>
-              <th className="px-4 py-2 text-right" title="Bonus voor poule waarvan beide winnaar + nr. 2 goed">Poule</th>
-              <th className="px-4 py-2 text-right">Totaal</th>
+              <th className="px-3 py-2 sm:px-4">#</th>
+              <th className="px-3 py-2 sm:px-4">Naam</th>
+              <th className="hidden px-4 py-2 text-right sm:table-cell">Wedstr.</th>
+              <th className="hidden px-4 py-2 text-right sm:table-cell">Bonus</th>
+              <th className="hidden px-4 py-2 text-right sm:table-cell">Bracket</th>
+              <th className="hidden px-4 py-2 text-right sm:table-cell" title="Bonus voor poule waarvan beide winnaar + nr. 2 goed">Poule</th>
+              <th className="px-3 py-2 text-right sm:px-4">Totaal</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={3} className="px-4 py-6 text-center text-slate-500 sm:hidden">
+                  Nog geen deelnemers met punten.
+                </td>
+                <td colSpan={7} className="hidden px-4 py-6 text-center text-slate-500 sm:table-cell">
                   Nog geen deelnemers met punten.
                 </td>
               </tr>
@@ -118,8 +121,8 @@ export default async function RanglijstPage() {
                   key={r.userId}
                   className={`border-b border-slate-50 ${isMe ? "bg-oranje-50/50" : ""}`}
                 >
-                  <td className="px-4 py-2 font-medium text-slate-500">{i + 1}</td>
-                  <td className="px-4 py-2 font-medium">
+                  <td className="px-3 py-2 font-medium text-slate-500 sm:px-4">{i + 1}</td>
+                  <td className="px-3 py-2 font-medium sm:px-4">
                     <Link
                       href={`/anderen/${r.userId}`}
                       className="hover:text-oranje-700 hover:underline"
@@ -128,13 +131,13 @@ export default async function RanglijstPage() {
                     </Link>
                     {isMe && <span className="ml-1 text-xs text-oranje-700">(jij)</span>}
                   </td>
-                  <td className="px-4 py-2 text-right">{r.matchPoints}</td>
-                  <td className="px-4 py-2 text-right">{r.bonusPoints}</td>
-                  <td className="px-4 py-2 text-right">{r.bracketPoints}</td>
-                  <td className="px-4 py-2 text-right text-oranje-700">
+                  <td className="hidden px-4 py-2 text-right sm:table-cell">{r.matchPoints}</td>
+                  <td className="hidden px-4 py-2 text-right sm:table-cell">{r.bonusPoints}</td>
+                  <td className="hidden px-4 py-2 text-right sm:table-cell">{r.bracketPoints}</td>
+                  <td className="hidden px-4 py-2 text-right text-oranje-700 sm:table-cell">
                     {r.groupBonusPoints > 0 ? `+${r.groupBonusPoints}` : "—"}
                   </td>
-                  <td className="px-4 py-2 text-right font-bold">{r.total}</td>
+                  <td className="px-3 py-2 text-right font-bold sm:px-4">{r.total}</td>
                 </tr>
               );
             })}

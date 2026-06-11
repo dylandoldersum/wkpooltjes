@@ -98,47 +98,83 @@ export default async function WedstrijdenPage() {
                 return (
                   <div
                     key={m.id}
-                    className="grid grid-cols-12 items-center gap-2 rounded-lg border border-slate-100 px-3 py-2"
+                    className="rounded-lg border border-slate-100 px-3 py-2"
                   >
-                    <div className="col-span-2 text-sm text-slate-500">
-                      {formatTime(m.kickoff)}
-                      {m.groupCode && (
-                        <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
-                          Poule {m.groupCode}
-                        </span>
-                      )}
+                    {/* Mobiel: tijd + groep + status op één regel; teams + score eronder */}
+                    <div className="flex items-center justify-between gap-2 text-xs text-slate-500 sm:hidden">
+                      <span>
+                        {formatTime(m.kickoff)}
+                        {m.groupCode && (
+                          <span className="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600">
+                            P{m.groupCode}
+                          </span>
+                        )}
+                      </span>
+                      <span>
+                        {locked ? "🔒 gesloten" : prediction ? "✓ ingevuld" : "—"}
+                      </span>
                     </div>
-                    <div className="col-span-10 sm:col-span-7">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="flex-1 text-right text-sm font-medium">
-                          <span className="mr-2">{home?.flag}</span>
-                          {home?.name ?? m.homeLabel}
-                        </span>
-                        <PredictionForm
-                          matchId={m.id}
-                          locked={locked || !home || !away}
-                          initialHome={prediction?.homeGoals ?? null}
-                          initialAway={prediction?.awayGoals ?? null}
-                        />
-                        <span className="flex-1 text-sm font-medium">
-                          {away?.name ?? m.awayLabel}
-                          <span className="ml-2">{away?.flag}</span>
-                        </span>
+                    <div className="mt-1.5 flex items-center gap-2 sm:hidden">
+                      <span className="flex-1 truncate text-right text-sm font-medium">
+                        <span className="mr-1">{home?.flag}</span>
+                        {home?.name ?? m.homeLabel}
+                      </span>
+                      <PredictionForm
+                        matchId={m.id}
+                        locked={locked || !home || !away}
+                        initialHome={prediction?.homeGoals ?? null}
+                        initialAway={prediction?.awayGoals ?? null}
+                      />
+                      <span className="flex-1 truncate text-sm font-medium">
+                        {away?.name ?? m.awayLabel}
+                        <span className="ml-1">{away?.flag}</span>
+                      </span>
+                    </div>
+
+                    {/* Desktop: alles op één regel */}
+                    <div className="hidden grid-cols-12 items-center gap-2 sm:grid">
+                      <div className="col-span-2 text-sm text-slate-500">
+                        {formatTime(m.kickoff)}
+                        {m.groupCode && (
+                          <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+                            Poule {m.groupCode}
+                          </span>
+                        )}
                       </div>
-                      {m.finished && m.homeGoals !== null && m.awayGoals !== null && (
-                        <div className="mt-1 text-center text-xs text-slate-500">
-                          Uitslag: {m.homeGoals}-{m.awayGoals} ({totoLabel(m.homeGoals, m.awayGoals)})
-                          {prediction && (
-                            <span className="ml-2 rounded bg-oranje-50 px-1.5 py-0.5 font-medium text-oranje-700">
-                              {prediction.pointsAwarded} pt
-                            </span>
-                          )}
+                      <div className="col-span-7">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="flex-1 text-right text-sm font-medium">
+                            <span className="mr-2">{home?.flag}</span>
+                            {home?.name ?? m.homeLabel}
+                          </span>
+                          <PredictionForm
+                            matchId={m.id}
+                            locked={locked || !home || !away}
+                            initialHome={prediction?.homeGoals ?? null}
+                            initialAway={prediction?.awayGoals ?? null}
+                          />
+                          <span className="flex-1 text-sm font-medium">
+                            {away?.name ?? m.awayLabel}
+                            <span className="ml-2">{away?.flag}</span>
+                          </span>
                         </div>
-                      )}
+                      </div>
+                      <div className="col-span-3 text-right text-xs text-slate-400">
+                        {locked ? "🔒 gesloten" : prediction ? "✓ ingevuld" : "—"}
+                      </div>
                     </div>
-                    <div className="col-span-12 sm:col-span-3 text-right text-xs text-slate-400">
-                      {locked ? "🔒 gesloten" : prediction ? "✓ ingevuld" : "—"}
-                    </div>
+
+                    {/* Uitslag-regel: zelfde voor mobiel + desktop */}
+                    {m.finished && m.homeGoals !== null && m.awayGoals !== null && (
+                      <div className="mt-1 text-center text-xs text-slate-500">
+                        Uitslag: {m.homeGoals}-{m.awayGoals} ({totoLabel(m.homeGoals, m.awayGoals)})
+                        {prediction && (
+                          <span className="ml-2 rounded bg-oranje-50 px-1.5 py-0.5 font-medium text-oranje-700">
+                            {prediction.pointsAwarded} pt
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
