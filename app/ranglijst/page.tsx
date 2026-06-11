@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { db, schema } from "@/db/client";
 import { sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
@@ -119,7 +120,13 @@ export default async function RanglijstPage() {
                 >
                   <td className="px-4 py-2 font-medium text-slate-500">{i + 1}</td>
                   <td className="px-4 py-2 font-medium">
-                    {r.name} {isMe && <span className="text-xs text-oranje-700">(jij)</span>}
+                    <Link
+                      href={`/anderen/${r.userId}`}
+                      className="hover:text-oranje-700 hover:underline"
+                    >
+                      {r.name}
+                    </Link>
+                    {isMe && <span className="ml-1 text-xs text-oranje-700">(jij)</span>}
                   </td>
                   <td className="px-4 py-2 text-right">{r.matchPoints}</td>
                   <td className="px-4 py-2 text-right">{r.bonusPoints}</td>
