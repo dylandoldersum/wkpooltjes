@@ -4,6 +4,7 @@ import { asc, eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { BracketForm } from "./BracketForm";
 import { SuggestionButton } from "./SuggestionButton";
+import { getBracketLockStatus } from "@/lib/locks";
 
 const STAGE_LABELS: Record<string, string> = {
   r16: "Achtste finales (top 16)",
@@ -37,12 +38,7 @@ export default async function BracketPage() {
     .where(eq(schema.bracketPredictions.userId, user.id));
   const pickMap = new Map(userPicks.map((p) => [p.slotId, p]));
 
-  const [lockSetting] = await db
-    .select()
-    .from(schema.settings)
-    .where(eq(schema.settings.key, "tournament_locks_at"));
-  const lockAt = lockSetting ? new Date(lockSetting.value) : new Date("2026-06-11T20:00:00+02:00");
-  const locked = lockAt.getTime() <= Date.now();
+  const { lockAt, locked } = await getBracketLockStatus();
 
   const byStage = new Map<string, typeof slots>();
   for (const s of slots) {

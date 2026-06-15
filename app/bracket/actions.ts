@@ -8,6 +8,7 @@ import {
   computePredictedStandings,
   computePredictedBestThirds,
 } from "@/lib/predicted-standings";
+import { getBracketLockStatus } from "@/lib/locks";
 import { revalidatePath } from "next/cache";
 
 const SaveSchema = z.object({
@@ -24,12 +25,8 @@ export async function saveBracketPick(input: unknown): Promise<{ ok: boolean; er
   const [slot] = await db.select().from(schema.bracketSlots).where(eq(schema.bracketSlots.id, slotId));
   if (!slot) return { ok: false, error: "Slot niet gevonden" };
 
-  const [lockSetting] = await db
-    .select()
-    .from(schema.settings)
-    .where(eq(schema.settings.key, "tournament_locks_at"));
-  const lockAt = lockSetting ? new Date(lockSetting.value) : null;
-  if (lockAt && lockAt.getTime() <= Date.now()) {
+  const { locked } = await getBracketLockStatus();
+  if (locked) {
     return { ok: false, error: "Bracket is gesloten" };
   }
 
@@ -76,12 +73,8 @@ export async function applyBracketSuggestions(): Promise<{
 }> {
   const user = await requireUser();
 
-  const [lockSetting] = await db
-    .select()
-    .from(schema.settings)
-    .where(eq(schema.settings.key, "tournament_locks_at"));
-  const lockAt = lockSetting ? new Date(lockSetting.value) : null;
-  if (lockAt && lockAt.getTime() <= Date.now()) {
+  const { locked } = await getBracketLockStatus();
+  if (locked) {
     return { ok: false, error: "Bracket is gesloten" };
   }
 
