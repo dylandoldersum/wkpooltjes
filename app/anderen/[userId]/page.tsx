@@ -5,6 +5,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { formatDateLong, formatTime, dateKey } from "@/lib/format";
 import { totoLabel } from "@/lib/scoring";
+import { getBracketLockStatus } from "@/lib/locks";
 
 const STAGE_LABELS: Record<string, string> = {
   "group-winner": "Poulewinnaars",
@@ -28,46 +29,9 @@ export default async function ViewOtherUser({
   const userId = Number(userIdRaw);
   if (!Number.isFinite(userId)) notFound();
 
-  // Lock check: andermans picks alleen zichtbaar na tournament_locks_at
-  const [lockSetting] = await db
-    .select()
-    .from(schema.settings)
-    .where(eq(schema.settings.key, "tournament_locks_at"));
-  const lockAt = lockSetting ? new Date(lockSetting.value) : null;
-  const tournamentLocked = lockAt ? lockAt.getTime() <= Date.now() : false;
+  // Bracket-lock: bepaalt of we andermans bracket-picks mogen tonen
+  const { lockAt: bracketLockAt, locked: bracketLocked } = await getBracketLockStatus();
   const isViewingSelf = userId === me.id;
-
-  if (!isViewingSelf && !tournamentLocked) {
-    return (
-      <div className="space-y-4">
-        <Link href="/ranglijst" className="text-sm text-oranje-600 hover:underline">
-          ← Terug naar ranglijst
-        </Link>
-        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-          <div className="text-3xl">🔒</div>
-          <h1 className="mt-3 text-xl font-bold">Andermans picks zijn nog verborgen</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Voorspellingen van anderen worden zichtbaar zodra het toernooi begint
-            {lockAt && (
-              <>
-                {" "}
-                (op{" "}
-                {new Intl.DateTimeFormat("nl-NL", {
-                  timeZone: "Europe/Amsterdam",
-                  day: "numeric",
-                  month: "long",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }).format(lockAt)}
-                )
-              </>
-            )}
-            .
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const [target] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
   if (!target) notFound();
@@ -252,6 +216,22 @@ export default async function ViewOtherUser({
       {/* ============ Bracket-picks ============ */}
       <section>
         <h2 className="mb-3 text-lg font-bold">Bracket-picks</h2>
+        {!isViewingSelf && !bracketLocked ? (
+          <div className="rounded-xl bg-white p-6 text-center shadow-sm">
+            <div className="text-2xl">🔒</div>
+            <p className="mt-2 text-sm text-slate-600">
+              Bracket-picks van anderen zijn pas zichtbaar zodra de bracket sluit (op{" "}
+              {new Intl.DateTimeFormat("nl-NL", {
+                timeZone: "Europe/Amsterdam",
+                day: "numeric",
+                month: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+              }).format(bracketLockAt)}
+              ).
+            </p>
+          </div>
+        ) : (
         <div className="space-y-3">
           {[
             "group-winner",
@@ -305,6 +285,7 @@ export default async function ViewOtherUser({
             );
           })}
         </div>
+        )}
       </section>
     </div>
   );
