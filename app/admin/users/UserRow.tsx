@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { deleteUser, toggleAdmin } from "./actions";
 
 type Props = {
@@ -66,6 +67,13 @@ export function UserRow({ user, isSelf, stats }: Props) {
       <td className="px-4 py-2 text-right text-xs text-slate-400">{created}</td>
       <td className="px-4 py-2 text-right">
         <div className="flex items-center justify-end gap-2">
+          <Link
+            href={`/admin/predictions/${user.id}`}
+            className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+            title="Voorspellingen bewerken (omzeilt lock)"
+          >
+            ✎ Picks
+          </Link>
           {!isSelf && (
             <button
               onClick={handleToggleAdmin}
